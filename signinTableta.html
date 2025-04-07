@@ -30,42 +30,87 @@
       </center>
     </form>
   </div>
-
-  <script>
-    // Inicializar Quagga
-    Quagga.init({
-      inputStream: {
-        name: "Live",
-        type: "LiveStream",
-        target: document.querySelector('#scanner-container'),
-        constraints: {
-  facingMode: { ideal: "environment" }, // intenta trasera, pero permite frontal si no puede
-  width: { ideal: 1280 },
-  height: { ideal: 720 }
-}
-
-      },
-      decoder: {
-        readers: ["code_128_reader", "ean_reader", "ean_8_reader"] // Puedes ajustar según el tipo de código
+<script>
+  Quagga.init({
+    inputStream: {
+      name: "Live",
+      type: "LiveStream",
+      target: document.querySelector('#scanner-container'),
+      constraints: {
+        facingMode: { ideal: "environment" },
+        width: { ideal: 1280 },
+        height: { ideal: 720 }
       }
-    }, function(err) {
-      if (err) {
-        console.error(err);
-        return;
+    },
+    decoder: {
+      readers: [
+        "code_128_reader", 
+        "ean_reader", 
+        "ean_8_reader", 
+        "code_39_reader", 
+        "upc_reader"
+      ]
+    },
+    locate: true,
+    locator: {
+      patchSize: "medium", // medium o large suelen ir bien
+      halfSample: false
+    }
+  }, function(err) {
+    if (err) {
+      console.error("Error al iniciar Quagga:", err);
+      alert("No se pudo iniciar la cámara.");
+      return;
+    }
+    console.log("Quagga iniciado");
+    Quagga.start();
+  });
+
+  // Mostrar visualmente el código detectado
+  Quagga.onProcessed(function(result) {
+    let drawingCtx = Quagga.canvas.ctx.overlay,
+        drawingCanvas = Quagga.canvas.dom.overlay;
+
+    if (result) {
+      if (result.boxes) {
+        drawingCtx.clearRect(0, 0, drawingCanvas.width, drawingCanvas.height);
+        result.boxes.filter(box => box !== result.box)
+          .forEach(box => {
+            Quagga.ImageDebug.drawPath(box, {x: 0, y: 1}, drawingCtx, {
+              color: "green",
+              lineWidth: 2
+            });
+          });
       }
-      Quagga.start();
-    });
 
-    // Cuando se detecta un código
-    Quagga.onDetected(function(result) {
-      let code = result.codeResult.code;
-      console.log("Código detectado: ", code);
-      document.getElementById('control').value = code;
+      if (result.box) {
+        Quagga.ImageDebug.drawPath(result.box, {x: 0, y: 1}, drawingCtx, {
+          color: "#00F",
+          lineWidth: 2
+        });
+      }
 
-      // Detener escaneo después de capturar
-      Quagga.stop();
-    });
-  </script>
+      if (result.codeResult && result.codeResult.code) {
+        Quagga.ImageDebug.drawPath(result.line, {x: 'x', y: 'y'}, drawingCtx, {
+          color: 'red',
+          lineWidth: 3
+        });
+      }
+    }
+  });
+
+  // Detectar el código y colocarlo en el input
+  Quagga.onDetected(function(result) {
+    let code = result.codeResult.code;
+    console.log("Código detectado:", code);
+
+    // Rellenar el campo de texto
+    document.getElementById('control').value = code;
+
+    // Detener Quagga después de un escaneo exitoso
+    Quagga.stop();
+  });
+</script>
 
   <style>
     body::before {
