@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <link rel="stylesheet" href="assets/css/main.css" />
+  <script src="https://unpkg.com/@ericblade/quagga2@1.2.6/dist/quagga.min.js"></script>
+  <title>Biblioteca ITAP</title>
+</head>
+<body style="background-color: #EBEBFA;">
+  <br>
+  <center>
+    <div class="title" style="font-size: 70px;">Bienvenid@ a la <br>Biblioteca del ITAP</div>
+    <br>
+    <div class="subtitle" style="font-size: 25px">Escanea tu credencial o introduce tu número de control</div>
+  </center><br><br>
+
+  <div class="ccontainer">
+    <form action="Bienvenida.php" method="POST">
+      <center>
+        <div class="textbox">
+          <label for="control" style="color:Black; font-size:20px">Número de control</label><br>
+          <input type="text" name="nocontrol" style="width: 550px; height: 50px;" id="control" placeholder="22750111" required><br><br>
+
+          <!-- Escáner de código de barras -->
+          <div id="scanner-container" style="width: 300px; height: 200px; border: 2px solid #000;"></div><br>
+
+          <button class="button" type="submit" style="width:550px; height:50px">Aceptar</button>
+        </div>
+      </center>
+    </form>
+  </div>
+
+  <script>
+    // Inicializar Quagga
+    Quagga.init({
+      inputStream: {
+        name: "Live",
+        type: "LiveStream",
+        target: document.querySelector('#scanner-container'),
+        constraints: {
+  facingMode: { ideal: "environment" }, // intenta trasera, pero permite frontal si no puede
+  width: { ideal: 1280 },
+  height: { ideal: 720 }
+}
+
+      },
+      decoder: {
+        readers: ["code_128_reader", "ean_reader", "ean_8_reader"] // Puedes ajustar según el tipo de código
+      }
+    }, function(err) {
+      if (err) {
+        console.error(err);
+        return;
+      }
+      Quagga.start();
+    });
+
+    // Cuando se detecta un código
+    Quagga.onDetected(function(result) {
+      let code = result.codeResult.code;
+      console.log("Código detectado: ", code);
+      document.getElementById('control').value = code;
+
+      // Detener escaneo después de capturar
+      Quagga.stop();
+    });
+  </script>
+
+  <style>
+    body::before {
+      content: "";
+      position: fixed;
+      top: 0;
+      left: -27px;
+      width: 105%;
+      height: 100%;
+      background-image: url("assets/images/auth/logotecnm.png");
+      background-repeat: no-repeat;
+      background-position: left;
+      background-size: contain;
+      opacity: 0.9; 
+      filter: blur(2px); 
+      z-index: -1; 
+    }
+  </style>
+</body>
+</html>
